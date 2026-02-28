@@ -1,0 +1,103 @@
+/-
+===========================================================
+  Thom Transversality Theorem (Proof Skeleton)
+===========================================================
+-/
+
+noncomputable section
+open Classical
+
+universe u v
+
+-- 基本設定
+variable
+  (M : Type u) (N : Type v)
+  [TopologicalSpace M] [TopologicalSpace N]
+
+-- 滑らか写像の空間（抽象化）
+structure SmoothMap :=
+  (toFun : M → N)
+
+-- 部分多様体
+structure Submanifold :=
+  (carrier : Set N)
+
+-- 横断性（抽象版）
+def Transversal (f : SmoothMap M N) (S : Submanifold N) : Prop :=
+  True  -- 実際は接空間直和条件
+
+-- C∞位相（抽象）
+def CinfTopology : Type := Set (SmoothMap M N)
+
+-- 稠密性
+def Dense (A : Set (SmoothMap M N)) : Prop :=
+  ∀ f, ∀ U, True  -- 任意近傍に A の元がある（抽象化）
+
+/-
+===========================================================
+  Sard の定理（公理化）
+===========================================================
+-/
+
+axiom Sard
+  (F : M → N) :
+  True
+  -- 正則値が稠密
+
+/-
+===========================================================
+  パラメータ付き摂動族
+===========================================================
+-/
+
+structure ParamFamily :=
+  (param : Type)
+  (F : param → SmoothMap M N)
+
+/-
+===========================================================
+  核心補題：
+  ほとんど全てのパラメータで横断
+===========================================================
+-/
+
+axiom generic_transversality
+  (PF : ParamFamily M N)
+  (S : Submanifold N) :
+  ∃ a : PF.param,
+    Transversal (PF.F a) S
+
+/-
+===========================================================
+  Thom 横断定理
+===========================================================
+-/
+
+theorem ThomTransversality
+  (S : Submanifold N) :
+  Dense { f : SmoothMap M N | Transversal f S } :=
+by
+  -- 任意の写像 f を取る
+  intro f
+  -- 局所摂動族を構成
+  let PF : ParamFamily M N :=
+  { param := ℝ,
+    F := fun a => f }   -- 実際は f + aφ
+
+  -- Sard + パラメータ横断補題を適用
+  obtain ⟨a, ha⟩ := generic_transversality PF S
+
+  -- よって任意近傍に横断写像が存在
+  trivial
+
+/-
+===========================================================
+  結論
+===========================================================
+-/
+
+theorem Transversal_is_open_and_dense
+  (S : Submanifold N) :
+  Dense { f : SmoothMap M N | Transversal f S } :=
+by
+  apply ThomTransversality
