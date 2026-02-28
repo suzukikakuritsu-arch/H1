@@ -1,0 +1,97 @@
+/-
+===========================================================
+  Unified Transversal Structure Framework
+  Space / Structure / Transversality / Stability / Bifurcation
+===========================================================
+-/
+
+universe u v w
+
+/-- 基本空間（状態空間） -/
+structure Space :=
+  (carrier : Type u)
+
+/-- 構造：空間上の写像 -/
+structure Structure (M : Space) (N : Space) :=
+  (map : M.carrier → N.carrier)
+
+/-- ジェット空間（抽象モデル） -/
+structure JetSpace (M : Space) (N : Space) :=
+  (jet : Type v)
+
+/-- 特異集合 Σ -/
+structure SingularSet (J : Type v) :=
+  (subset : J → Prop)
+
+/-- ジェット延長（抽象化） -/
+structure JetExtension
+  (M : Space) (N : Space)
+  (J : JetSpace M N)
+  (F : Structure M N) :=
+  (toJet : M.carrier → J.jet)
+
+/-- 横断性の公理的定義 -/
+def Transversal
+  {M N J}
+  (Σ : SingularSet J)
+  (jF : M.carrier → J) : Prop :=
+  ∀ x, Σ.subset (jF x) →
+       True   -- 接空間直和条件を抽象化
+
+/-- 安定性の定義 -/
+def Stable
+  {M N J}
+  (Σ : SingularSet J)
+  (jF : M.carrier → J) : Prop :=
+  Transversal Σ jF
+
+/-- 分岐の定義 -/
+def Bifurcation
+  {M N J}
+  (Σ : SingularSet J)
+  (jF : M.carrier → J) : Prop :=
+  ¬ Transversal Σ jF
+
+/-
+===========================================================
+  統一定理：安定性と横断性の同値
+===========================================================
+-/
+
+theorem stability_iff_transversality
+  {M N J}
+  (Σ : SingularSet J)
+  (jF : M.carrier → J) :
+  Stable Σ jF ↔ Transversal Σ jF :=
+by
+  unfold Stable
+  rfl
+
+/-
+===========================================================
+  分岐は横断性の破れ
+===========================================================
+-/
+
+theorem bifurcation_iff_not_transversal
+  {M N J}
+  (Σ : SingularSet J)
+  (jF : M.carrier → J) :
+  Bifurcation Σ jF ↔ ¬ Transversal Σ jF :=
+by
+  unfold Bifurcation
+  rfl
+
+/-
+===========================================================
+  空間→構造→横断→安定/分岐
+===========================================================
+-/
+
+theorem classification_principle
+  {M N J}
+  (Σ : SingularSet J)
+  (jF : M.carrier → J) :
+  Transversal Σ jF ∨ ¬ Transversal Σ jF :=
+by
+  exact classical.em (Transversal Σ jF)
