@@ -1,0 +1,148 @@
+/-
+==============================================================
+Singularity Stratification + Transversality
+Fold (A₂) and Cusp (A₃) Structure
+Finite Dimensional ℝⁿ Setting
+Lean 4 + mathlib
+==============================================================
+-/
+
+import Mathlib.Analysis.Calculus.FDeriv
+import Mathlib.Analysis.Calculus.IteratedDeriv
+import Mathlib.Analysis.Calculus.Implicit
+import Mathlib.Analysis.NormedSpace.EuclideanSpace
+import Mathlib.Analysis.NormedSpace.FiniteDimension
+import Mathlib.LinearAlgebra.Dimension
+import Mathlib.Topology.LocalHomeomorph
+
+noncomputable section
+open Classical
+open scoped Topology
+
+------------------------------------------------------------
+-- Base Space
+------------------------------------------------------------
+
+variable {n : ℕ}
+abbrev E := EuclideanSpace ℝ (Fin n)
+
+------------------------------------------------------------
+-- First Derivative Structure
+------------------------------------------------------------
+
+def Dx (F : E → E) (x : E) :=
+  fderiv ℝ F x
+
+def kernelDim (F : E → E) (x : E) : ℕ :=
+  Module.rank ℝ ((Dx F x).ker)
+
+def RegularPoint (F : E → E) (x : E) : Prop :=
+  kernelDim F x = 0
+
+def SingularPoint (F : E → E) (x : E) : Prop :=
+  kernelDim F x ≥ 1
+
+------------------------------------------------------------
+-- Stratification by kernel dimension
+------------------------------------------------------------
+
+def SingStratum (F : E → E) (k : ℕ) : Set E :=
+  {x | kernelDim F x = k}
+
+------------------------------------------------------------
+-- Second derivative along kernel
+------------------------------------------------------------
+
+def secondDeriv (F : E → E) (x : E) :=
+  iteratedFDeriv ℝ 2 F x
+
+/-
+Evaluate second derivative on a vector twice.
+-/
+def secondAlong
+  (F : E → E)
+  (x v : E) :=
+  secondDeriv F x v v
+
+------------------------------------------------------------
+-- Fold (A₂) condition
+------------------------------------------------------------
+
+def FoldPoint (F : E → E) (x : E) : Prop :=
+  kernelDim F x = 1 ∧
+  ∃ v ∈ (Dx F x).ker,
+    v ≠ 0 ∧
+    secondAlong F x v ≠ 0
+
+------------------------------------------------------------
+-- Cusp (A₃) condition
+------------------------------------------------------------
+
+def thirdDeriv (F : E → E) (x : E) :=
+  iteratedFDeriv ℝ 3 F x
+
+def thirdAlong
+  (F : E → E)
+  (x v : E) :=
+  thirdDeriv F x v v v
+
+def CuspPoint (F : E → E) (x : E) : Prop :=
+  kernelDim F x = 1 ∧
+  ∃ v ∈ (Dx F x).ker,
+    v ≠ 0 ∧
+    secondAlong F x v = 0 ∧
+    thirdAlong F x v ≠ 0
+
+------------------------------------------------------------
+-- Structural hierarchy theorem (conceptual form)
+------------------------------------------------------------
+
+theorem singular_hierarchy
+  (F : E → E)
+  (x : E)
+  (h : SingularPoint F x) :
+  kernelDim F x ≥ 1 :=
+by
+  exact h
+
+------------------------------------------------------------
+-- Fold implies singular
+------------------------------------------------------------
+
+theorem fold_is_singular
+  {F : E → E} {x : E}
+  (h : FoldPoint F x) :
+  SingularPoint F x :=
+by
+  unfold FoldPoint SingularPoint
+  exact le_of_eq h.1
+
+------------------------------------------------------------
+-- Cusp implies fold degeneracy
+------------------------------------------------------------
+
+theorem cusp_is_higher_degeneracy
+  {F : E → E} {x : E}
+  (h : CuspPoint F x) :
+  SingularPoint F x :=
+by
+  unfold CuspPoint SingularPoint
+  exact le_of_eq h.1
+
+/-
+==============================================================
+Mathematical Meaning:
+
+kernelDim = 0 → regular (stable)
+kernelDim = 1 + second ≠ 0 → Fold (A₂)
+kernelDim = 1 + second = 0 + third ≠ 0 → Cusp (A₃)
+
+Higher vanishing order ⇒ higher catastrophe class.
+
+All multi-branching phenomena emerge from:
+
+1. Rank drop
+2. Order of Taylor vanishing along kernel
+
+==============================================================
+-/
