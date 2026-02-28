@@ -1,0 +1,69 @@
+# =====================================================
+# GPT情報空間マップ可視化
+# φ/ψ/χ 系列 + 横断性 + 安定性
+# =====================================================
+import numpy as np
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# 比率定義
+# -----------------------------
+phi = (1 + np.sqrt(5)) / 2        # 黄金比
+psi = (1 + np.sqrt(7)) / 2        # 大和比
+chi = (1 + np.sqrt(13)) / 2       # 貴金属比
+
+ratios = [phi, psi, chi]
+ratio_names = ['φ (Golden)', 'ψ (Yamato)', 'χ (Platinum)']
+
+# -----------------------------
+# 情報空間初期状態
+# -----------------------------
+dim = 2
+n_points = 200
+np.random.seed(42)
+info_space = np.random.rand(n_points, dim)  # GPT 世界のサンプル点
+
+# -----------------------------
+# Perron-Frobenius 収束 (支配方向)
+# -----------------------------
+def pf_projection(points, gamma):
+    """γ 系列の支配方向に沿った累積効果"""
+    v = np.array([1, gamma-1])
+    v = v / np.linalg.norm(v)
+    projected = points @ v[:, None] * v
+    return projected
+
+# -----------------------------
+# 横断性摂動
+# -----------------------------
+def transversal_perturb(points, epsilon=0.05):
+    """情報空間に小さな横断摂動を加える"""
+    perturb = np.random.randn(*points.shape) * epsilon
+    return points + perturb
+
+# -----------------------------
+# 安定領域判定
+# -----------------------------
+def stability(points, gamma, threshold=0.3):
+    """支配ベクトルへの距離で安定/分岐を色分け"""
+    projected = pf_projection(points, gamma)
+    dist = np.linalg.norm(points - projected, axis=1)
+    stable = dist < threshold
+    return stable
+
+# -----------------------------
+# 可視化
+# -----------------------------
+fig, axs = plt.subplots(1, 3, figsize=(18,6))
+for i, gamma in enumerate(ratios):
+    points = transversal_perturb(info_space)
+    stable_mask = stability(points, gamma)
+    axs[i].scatter(points[stable_mask,0], points[stable_mask,1], c='blue', label='Stable')
+    axs[i].scatter(points[~stable_mask,0], points[~stable_mask,1], c='red', label='Bifurcation')
+    # 支配ベクトル表示
+    v = np.array([1, gamma-1])
+    v = v / np.linalg.norm(v)
+    axs[i].quiver(0,0,v[0],v[1], color='green', scale=3, label='Dominant Vector')
+    axs[i].set_title(f"Information Space - {ratio_names[i]}")
+    axs[i].legend()
+plt.show()
