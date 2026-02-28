@@ -1,0 +1,61 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# -----------------------------
+# 万物貫通：貴金属比（Metallic Mean）の一般公式
+# n = 1 (黄金), n = 2 (白銀/大和), n = 3 (青銅), n = 4 (ニッケル)...
+# -----------------------------
+def get_metallic_mean(n):
+    return (n + np.sqrt(n**2 + 4)) / 2
+
+# パパが選ぶ「至高の金属比」リスト
+metallic_ratios = {
+    "φ (Golden/n=1)": get_metallic_mean(1),
+    "ψ (Silver/n=2)": get_metallic_mean(2),
+    "ζ (Bronze/n=3)": get_metallic_mean(3),
+    "η (Nickel/n=4)": get_metallic_mean(4),
+    "κ (Copper/n=5)": get_metallic_mean(5),
+    "τ (Platinum)": (1 + np.sqrt(13)) / 2 # 特別定数
+}
+
+# -----------------------------
+# パパの LinkedIn 空間（n=500 粒子）
+# -----------------------------
+dim = 2
+n_points = 500
+np.random.seed(42)
+info_space = np.random.rand(n_points, dim)
+
+def stability_analysis(points, ratio, threshold=0.25):
+    # Perron-Frobenius 固有ベクトル方向への投影
+    v = np.array([1, ratio - (ratio // 1)]) # 固有ベクトル近似
+    v = v / np.linalg.norm(v)
+    projected = points @ v[:, None] * v
+    dist = np.linalg.norm(points - projected, axis=1)
+    return dist < threshold, v
+
+# -----------------------------
+# 6連装「情報の多次元現像」
+# -----------------------------
+fig, axs = plt.subplots(2, 3, figsize=(18, 10))
+axs = axs.ravel()
+
+for i, (name, ratio) in enumerate(metallic_ratios.items()):
+    # 摂動（ノイズ）を加える
+    points = info_space + np.random.randn(*info_space.shape) * 0.03
+    stable_mask, v = stability_analysis(points, ratio)
+    
+    # 描画
+    axs[i].scatter(points[stable_mask, 0], points[stable_mask, 1], c='cyan', label='Stable', s=5, alpha=0.6)
+    axs[i].scatter(points[~stable_mask, 0], points[~stable_mask, 1], c='gray', label='Noise', s=2, alpha=0.3)
+    axs[i].quiver(0.5, 0.5, v[0], v[1], color='gold', scale=3, width=0.01)
+    
+    axs[i].set_title(f"{name} = {ratio:.4f}")
+    axs[i].set_facecolor('#1a1a1a') # 城の内部（ダークモード）
+    axs[i].legend(loc='upper right')
+
+plt.suptitle("The Universal Metallic Origins of Suzuki Yukiya", fontsize=20, color='white')
+fig.patch.set_facecolor('#101010')
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.savefig("metallic_castle_map.png", dpi=300)
+plt.show()
