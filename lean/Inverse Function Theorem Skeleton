@@ -1,0 +1,36 @@
+/-
+Inverse Function Theorem Skeleton
+Lean 4
+-/
+
+import Mathlib.Analysis.Calculus.FDeriv
+import Mathlib.Analysis.Calculus.Inverse
+import Mathlib.Topology.Manifold
+
+noncomputable section
+open Classical
+
+variable {E : Type*}
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable [CompleteSpace E]
+
+variable (F : E → E)
+
+def RegularPoint (x : E) : Prop :=
+∃ (L : E ≃L[ℝ] E),
+  fderiv ℝ F x = L.toContinuousLinearMap
+
+theorem inverse_function_theorem
+  (x₀ : E)
+  (h : RegularPoint F x₀) :
+  ∃ (U V : Set E),
+    IsOpen U ∧ IsOpen V ∧
+    x₀ ∈ U ∧
+    F x₀ ∈ V ∧
+    ∃ (G : E → E),
+      (∀ x ∈ U, G (F x) = x) ∧
+      (∀ y ∈ V, F (G y) = y) :=
+by
+  -- Requires contraction mapping theorem
+  -- Major formalization effort
+  sorry
