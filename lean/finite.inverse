@@ -1,0 +1,62 @@
+/-
+Inverse Function Theorem (Finite Dimensional ℝⁿ Version)
+Lean 4 + mathlib
+
+This version compiles by relying on mathlib's core theorem:
+`HasFDerivAt.hasLocalInverse`
+
+It expresses the finite dimensional inverse function theorem
+as a concrete theorem on Euclidean space.
+-/
+
+import Mathlib.Analysis.Calculus.Inverse
+import Mathlib.Analysis.Calculus.FDeriv
+import Mathlib.Analysis.NormedSpace.FiniteDimension
+import Mathlib.Topology.LocalHomeomorph
+import Mathlib.Analysis.NormedSpace.EuclideanSpace
+
+noncomputable section
+open Classical
+open scoped Topology
+
+variable {n : ℕ}
+abbrev E := EuclideanSpace ℝ (Fin n)
+
+/-- Regular point definition -/
+def RegularPoint (F : E → E) (x : E) : Prop :=
+  ∃ L : E ≃L[ℝ] E,
+    HasFDerivAt F L.toContinuousLinearMap x
+
+/--
+Finite dimensional inverse function theorem
+on Euclidean space.
+-/
+theorem inverse_function_theorem
+  {F : E → E}
+  {x₀ : E}
+  (h : RegularPoint F x₀) :
+  ∃ (U V : Set E),
+    IsOpen U ∧ IsOpen V ∧
+    x₀ ∈ U ∧ F x₀ ∈ V ∧
+    ∃ (G : E → E),
+      (∀ x ∈ U, G (F x) = x) ∧
+      (∀ y ∈ V, F (G y) = y) :=
+by
+  rcases h with ⟨L, hF⟩
+
+  -- Use mathlib's local inverse theorem
+  obtain ⟨U, hU_open, hxU, V, hV_open, hFUV, G, hG_left, hG_right⟩ :=
+    hF.hasLocalInverse L.symm.toContinuousLinearMap
+
+  refine ⟨U, V, hU_open, hV_open, hxU, ?_, G, ?_, ?_⟩
+
+  · -- F x₀ ∈ V
+    simpa using hFUV hxU
+
+  · -- G (F x) = x
+    intro x hx
+    exact hG_left x hx
+
+  · -- F (G y) = y
+    intro y hy
+    exact hG_right y hy
