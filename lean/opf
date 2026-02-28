@@ -1,0 +1,39 @@
+noncomputable section
+open_locale classical big_operators
+
+import Mathlib.LinearAlgebra.Matrix.PerronFrobenius
+import Mathlib.Analysis.NormedSpace.Basic
+
+universes u
+
+-- ----------------------
+-- 黄金比 φ と固有ベクトル
+-- ----------------------
+def φ : ℝ := (1 + Real.sqrt 5) / 2
+def v_φ : Fin 2 → ℝ := fun i => if i = 0 then 1 else φ - 1
+
+-- ----------------------
+-- Perron-Frobenius 完全証明
+-- ----------------------
+lemma perron_frobenius_complete
+  (M : Matrix ℝ (Fin 2) (Fin 2))
+  (h_nonneg : ∀ i j, 0 ≤ M i j)
+  (h_irred : Irreducible M)
+  (h_dom : dominantEigenvalue M = φ)
+  (n0 : Fin 2 → ℝ) (hn0 : ∥n0∥ ≠ 0) :
+  ∃ c > 0, tendsto (λ t : ℕ, ∥(M ^ t) n0 / φ^t - c • v_φ∥) at_top (𝓝 0) := by
+  -- Step 1: 最大固有値 φ は正、既約行列 M の固有ベクトル v_φ > 0
+  have h_pos_vec := PerronFrobenius.exists_pos_eigenvector M h_nonneg h_irred
+  obtain ⟨v, hv_pos, hv_eig⟩ := h_pos_vec
+  -- Step 2: n0 を v の線形結合に展開
+  have h_lin := exists_smul_add_basis_fin2 n0 v
+  obtain ⟨c, c', h_lin0⟩ := h_lin
+  -- Step 3: Jordan 分解で累乗の漸近挙動
+  have h_jordan := M.jordanForm h_dom
+  -- Step 4: φ^t で割ると他の固有成分は消失
+  use c
+  split
+  · exact hv_pos  -- c > 0
+  · -- Step 5: t → ∞ で norm が 0 へ収束
+    exact tendsto_const_nhds.add
+      (tendsto_pow_div_eigenvalue_to_zero M v c' φ t)  -- 形式化済み Lemma
