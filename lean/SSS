@@ -1,0 +1,170 @@
+/-
+==============================================================
+Singularity Stratification and Simple Bifurcation Theorem
+Finite Dimensional Version (ℝⁿ)
+Lean 4 + mathlib
+==============================================================
+-/
+
+import Mathlib.Analysis.Calculus.FDeriv
+import Mathlib.Analysis.Calculus.Inverse
+import Mathlib.Analysis.Calculus.Implicit
+import Mathlib.Analysis.NormedSpace.EuclideanSpace
+import Mathlib.Analysis.NormedSpace.FiniteDimension
+import Mathlib.Topology.LocalHomeomorph
+import Mathlib.LinearAlgebra.Dimension
+import Mathlib.LinearAlgebra.LinearIndependent
+
+noncomputable section
+open Classical
+open scoped Topology
+
+------------------------------------------------------------
+-- Base Space
+------------------------------------------------------------
+
+variable {n : ℕ}
+abbrev E := EuclideanSpace ℝ (Fin n)
+
+------------------------------------------------------------
+-- Regular / Singular Structure
+------------------------------------------------------------
+
+def RegularPoint (F : E → E) (x : E) : Prop :=
+  ∃ L : E ≃L[ℝ] E,
+    HasFDerivAt F L.toContinuousLinearMap x
+
+def SingularPoint (F : E → E) (x : E) : Prop :=
+  ¬ RegularPoint F x
+
+def Reg (F : E → E) : Set E :=
+  {x | RegularPoint F x}
+
+def Sing (F : E → E) : Set E :=
+  {x | SingularPoint F x}
+
+------------------------------------------------------------
+-- Kernel dimension stratification
+------------------------------------------------------------
+
+def kernelDim (F : E → E) (x : E) : ℕ :=
+  Module.rank ℝ
+    ((fderiv ℝ F x).ker)
+
+def SingStratum (F : E → E) (k : ℕ) : Set E :=
+  {x | kernelDim F x = k}
+
+theorem singular_union_strata
+  (F : E → E) :
+  Sing F =
+  {x | kernelDim F x ≥ 1} :=
+by
+  classical
+  ext x
+  unfold Sing SingularPoint RegularPoint kernelDim
+  -- finite dimensional equivalence:
+  -- invertible ⇔ kernel dim = 0
+  sorry
+
+------------------------------------------------------------
+-- Local inverse on regular stratum
+------------------------------------------------------------
+
+theorem local_inverse_regular
+  {F : E → E}
+  {x₀ : E}
+  (h : RegularPoint F x₀) :
+  ∃ (U V : Set E),
+    IsOpen U ∧ IsOpen V ∧
+    x₀ ∈ U ∧ F x₀ ∈ V ∧
+    ∃ (G : E → E),
+      (∀ x ∈ U, G (F x) = x) ∧
+      (∀ y ∈ V, F (G y) = y) :=
+by
+  classical
+  rcases h with ⟨L, hF⟩
+  obtain ⟨U, hU_open, hxU, V, hV_open, hFUV, G, hG_left, hG_right⟩ :=
+    hF.hasLocalInverse L.symm.toContinuousLinearMap
+  refine ⟨U, V, hU_open, hV_open, hxU, ?_, G, ?_, ?_⟩
+  · simpa using hFUV hxU
+  · intro x hx; exact hG_left x hx
+  · intro y hy; exact hG_right y hy
+
+------------------------------------------------------------
+-- Simple Bifurcation Setting
+-- F : E × ℝ → E
+------------------------------------------------------------
+
+abbrev ParamSpace := E × ℝ
+
+variable {F : ParamSpace → E}
+variable {x₀ : E} {λ₀ : ℝ}
+
+/-
+We assume:
+1. F(x₀, λ₀) = 0
+2. kernel dim of D_x F at (x₀, λ₀) = 1
+3. transversality condition holds
+-/
+
+def Dx (p : ParamSpace) :=
+  fderiv ℝ F p
+
+------------------------------------------------------------
+-- Simple (1D kernel) bifurcation condition
+------------------------------------------------------------
+
+def SimpleKernel (p : ParamSpace) : Prop :=
+  Module.rank ℝ ((Dx p).ker) = 1
+
+------------------------------------------------------------
+-- Transversality condition (abstract form)
+------------------------------------------------------------
+
+def Transverse (p : ParamSpace) : Prop :=
+  ∃ v ∈ (Dx p).ker,
+    v ≠ 0 ∧
+    -- second derivative in kernel direction nonzero
+    True   -- placeholder for higher derivative nondegeneracy
+
+------------------------------------------------------------
+-- Finite dimensional simple bifurcation theorem
+-- (Crandall–Rabinowitz type skeleton)
+------------------------------------------------------------
+
+theorem simple_bifurcation
+  (h₀ : F (x₀, λ₀) = 0)
+  (h₁ : SimpleKernel (x₀, λ₀))
+  (h₂ : Transverse (x₀, λ₀)) :
+  ∃ (φ : ℝ → E) (ψ : ℝ → ℝ),
+    φ 0 = x₀ ∧
+    ψ 0 = λ₀ ∧
+    (∀ t, F (φ t, ψ t) = 0) ∧
+    (∃ ε > 0,
+      ∀ t, 0 < |t| → |t| < ε →
+        φ t ≠ x₀) :=
+by
+  /-
+  Finite dimensional proof idea:
+  1. Split space into kernel ⊕ complement
+  2. Use implicit function theorem on complement
+  3. Reduce to 1D scalar equation
+  4. Apply quadratic nondegeneracy
+  5. Obtain branch φ(t)
+  -/
+  sorry
+
+/-
+==============================================================
+Structural Interpretation:
+
+1. ℝⁿ decomposes into regular and singular sets.
+2. Singular set stratifies by kernel dimension.
+3. Kernel dimension 1 + transversality ⇒ branch creation.
+4. Multiplicity emerges from degeneracy order.
+
+All “multi-” phenomena arise from:
+  (rank drop) + (higher order vanishing).
+
+==============================================================
+-/
