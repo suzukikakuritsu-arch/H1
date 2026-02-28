@@ -1,0 +1,86 @@
+/-
+Inverse Function Theorem (Banach Space Version)
+Lean 4 + mathlib
+-/
+
+import Mathlib.Analysis.Calculus.FDeriv
+import Mathlib.Analysis.Calculus.ContDiff
+import Mathlib.Analysis.NormedSpace.OperatorNorm
+import Mathlib.Topology.MetricSpace.Contraction
+
+noncomputable section
+open Classical
+open Metric
+
+variable {E : Type*}
+variable [NormedAddCommGroup E]
+variable [NormedSpace ℝ E]
+variable [CompleteSpace E]
+
+------------------------------------------------------------
+-- C¹ map
+------------------------------------------------------------
+
+variable (F : E → E)
+
+------------------------------------------------------------
+-- Derivative at x₀
+------------------------------------------------------------
+
+def dF (x : E) :=
+fderiv ℝ F x
+
+------------------------------------------------------------
+-- Invertible derivative condition
+------------------------------------------------------------
+
+def DerivInvertible (x₀ : E) : Prop :=
+∃ (L : E ≃L[ℝ] E),
+  dF F x₀ = L.toContinuousLinearMap
+
+------------------------------------------------------------
+-- Local inverse construction via contraction
+------------------------------------------------------------
+
+def NewtonMap
+  (x₀ : E)
+  (Linv : E ≃L[ℝ] E)
+  (y : E) :
+  E → E :=
+fun x => x - Linv (F x - y)
+
+------------------------------------------------------------
+-- Core existence statement
+------------------------------------------------------------
+
+theorem inverse_function_theorem
+  (x₀ : E)
+  (hF : ContDiff ℝ 1 F)
+  (hInv : DerivInvertible F x₀) :
+  ∃ (U V : Set E),
+    IsOpen U ∧ IsOpen V ∧
+    x₀ ∈ U ∧
+    F x₀ ∈ V ∧
+    ∃ (G : E → E),
+      (∀ x ∈ U, G (F x) = x) ∧
+      (∀ y ∈ V, F (G y) = y) :=
+by
+  classical
+  rcases hInv with ⟨L, hL⟩
+
+  -- Step 1: define inverse linear map
+  let Linv := L.symm
+
+  -- Step 2: show Newton map is contraction
+  -- Requires estimate:
+  -- ‖Id - Linv ∘ dF_x‖ < 1 near x₀
+
+  -- This uses continuity of derivative
+  have h_cont :
+    Continuous (fun x => dF F x) :=
+    (hF.contDiff).continuous_fderiv
+
+  -- Major technical estimates required here
+
+  -- Placeholder: full proof requires several lemmas
+  sorry
